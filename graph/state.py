@@ -1,6 +1,6 @@
 from typing import List, TypedDict,Dict, Annotated
 from langchain_core.messages import BaseMessage
-from consts import Intent
+from graph.consts import Intent
 from langgraph.graph.message import add_messages
 
 
@@ -18,6 +18,7 @@ class GraphState(TypedDict):
     intention: Intent
     historical_conversation: List[BaseMessage]
     captured_histoical_conversation: bool
+    infoProduto: str
 
     
 

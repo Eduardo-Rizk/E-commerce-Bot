@@ -1,5 +1,5 @@
 from graph.state import GraphState
-from chain.fetch_conversation_fromFile import fetch_conversation_from_json
+from graph.chain.tools.fetch_conversation_fromFile import fetch_conversation_from_json
 
 def load_historical_conversation(state: GraphState) -> GraphState:
     """
@@ -19,4 +19,4 @@ def load_historical_conversation(state: GraphState) -> GraphState:
     state["captured_histoical_conversation"] = True
 
     
-    return state
+    return state    
