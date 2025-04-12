@@ -13,6 +13,15 @@ from graph.state import GraphState
 from graph.nodes.help_atctive_order import help_active_order
 
 
+
+from graph.nodes.execute_tool_node import execute_tool_node
+
+
+from graph.chain.order_status_chain import order_status_chain
+
+from graph.nodes.order_status import order_status_node
+
+
 def test_intention():
 
 
@@ -36,7 +45,8 @@ def test_help_active_order_should_ask_for_order_number_when_info_empty():
         "intention": Intent.ORDER_STATUS,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "infoProduto": ""
+        "infoProduto": "",
+        "numeroPedido": ""
     }
 
     updated_state = help_active_order(state)
@@ -54,18 +64,67 @@ def test_help_active_order_InfoProduto_completo():
         "intention": Intent.ORDER_STATUS,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "infoProduto": "132dsadw313"
+        "infoProduto": "132dsadw313",
+        "numeroPedido": "123456789"
     }
 
     updated_state = help_active_order(state)
 
 
-    print("updated_state:", updated_state)
 
     # Verifica se não houve adição de mensagem da AI
     assert len(updated_state["conversation"]) == 1, "A conversa não deve ter mudado."
     assert isinstance(updated_state["conversation"][-1], HumanMessage)
 
+
+
+def test_order_status_chain_toolCall_orderStatus():
+    state: GraphState = {
+        "conversation": [
+            HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
+        ],
+        "intention": Intent.ORDER_STATUS,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "infoProduto": "132dsadw313",
+        "numeroPedido": "ABC12345"
+    }
+
+    order_status_chain_result = order_status_chain.invoke({"order_number": state["numeroPedido"], "order_information": state["infoProduto"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+
+
+    assert isinstance(order_status_chain_result, AIMessage)
+    assert order_status_chain_result.tool_calls and order_status_chain_result.tool_calls[0]["name"] == "check_status"
+
+
+    
+def test_order_status_node():
+    state: GraphState = {
+        "conversation": [
+            HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
+        ],
+        "intention": Intent.ORDER_STATUS,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "infoProduto": "132dsadw313",
+        "numeroPedido": "ABC12345"
+    }
+
+    updated_state = order_status_node(state)
+
+    print("Primeiro State:", updated_state)
+
+    updated_state2 = execute_tool_node(updated_state)
+
+    print("Segundo State:", updated_state2)
+
+    updated_state_final_response = order_status_node(updated_state2)
+
+    print("State Final:", updated_state_final_response)
+
+    assert isinstance(updated_state_final_response["conversation"][-1], AIMessage)
+
+    
 
 
 

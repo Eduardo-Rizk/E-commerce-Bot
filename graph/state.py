@@ -19,6 +19,7 @@ class GraphState(TypedDict):
     historical_conversation: List[BaseMessage]
     captured_histoical_conversation: bool
     infoProduto: str
+    numeroPedido: str
 
     
 
