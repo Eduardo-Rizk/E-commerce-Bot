@@ -98,7 +98,7 @@ def test_order_status_chain_toolCall_orderStatus():
 
 
     
-def test_order_status_node():
+def test_order_status_node_with_final_response():
     state: GraphState = {
         "conversation": [
             HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
