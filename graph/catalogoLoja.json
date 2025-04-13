@@ -1,0 +1,57 @@
+{
+    "store_name": "Loja Genérica de Roupas",
+    "currency": "BRL",
+    "products": [
+      {
+        "id": "P001",
+        "name": "Camiseta Básica",
+        "description": "Camiseta 100% algodão, leve e confortável.",
+        "category": "Camisetas",
+        "price": 49.99,
+        "available_sizes": ["P", "M", "G", "GG"],
+        "colors": ["Branco", "Preto", "Azul"],
+        "in_stock": true
+      },
+      {
+        "id": "P002",
+        "name": "Boné Preto",
+        "description": "Boné ajustável com aba curva e estampa discreta.",
+        "category": "Acessórios",
+        "price": 29.90,
+        "available_sizes": ["Tamanho Único"],
+        "colors": ["Preto"],
+        "in_stock": true
+      },
+      {
+        "id": "P003",
+        "name": "Calça Jeans Slim",
+        "description": "Calça jeans com corte slim e elastano.",
+        "category": "Calças",
+        "price": 129.90,
+        "available_sizes": ["38", "40", "42", "44", "46"],
+        "colors": ["Azul Escuro", "Preto"],
+        "in_stock": true
+      },
+      {
+        "id": "P004",
+        "name": "Vestido Floral",
+        "description": "Vestido leve com estampa floral, ideal para o verão.",
+        "category": "Vestidos",
+        "price": 189.90,
+        "available_sizes": ["PP", "P", "M", "G"],
+        "colors": ["Rosa", "Amarelo", "Verde"],
+        "in_stock": true
+      },
+      {
+        "id": "P005",
+        "name": "Jaqueta Jeans Oversized",
+        "description": "Jaqueta jeans com estilo urbano, oversized.",
+        "category": "Jaquetas",
+        "price": 219.90,
+        "available_sizes": ["P", "M", "G"],
+        "colors": ["Jeans Claro", "Jeans Escuro"],
+        "in_stock": false
+      }
+    ]
+  }
+  

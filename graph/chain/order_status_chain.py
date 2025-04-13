@@ -1,5 +1,4 @@
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from graph.chain.tools.check_status import check_status
 

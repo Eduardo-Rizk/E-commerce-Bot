@@ -5,11 +5,11 @@ def order_status_node(state: GraphState) -> GraphState:
 
     print(" --- ORDER STATUS NODE ---")
     
-    order_number = state["numeroPedido"]
+    order_number = state["order_number"]
 
-    order_status_chain_result = order_status_chain.invoke({"order_number": order_number, "order_information": state["infoProduto"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+    order_status_chain_result = order_status_chain.invoke({"order_number": order_number, "order_information": state["product_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
 
 
-    state["conversation"].append(order_status_chain_result)
+   
     
-    return state
+    return {"conversation": [order_status_chain_result]}

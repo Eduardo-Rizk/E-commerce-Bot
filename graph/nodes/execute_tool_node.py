@@ -3,24 +3,40 @@ from langgraph.prebuilt import ToolNode
 from graph.consts import Intent
 from graph.state import GraphState
 from graph.chain.tools.check_status import check_status 
+from graph.chain.tools.fetch_catalog_store import fetch_catalog
 
 
 
 
 
-tool_node = ToolNode(tools=[check_status])
+
+tool_node = ToolNode(tools=[check_status, fetch_catalog])
 
 
 def execute_tool_node(state: GraphState) -> GraphState:
+    """
+    Node responsável por executar chamadas de ferramentas (tools) detectadas na conversa.
+
+    Este nó utiliza o ToolNode do LangGraph para:
+    - Identificar automaticamente tool calls geradas pela LLM (como `check_status` ou `fetch_catalog`).
+    - Executar as ferramentas registradas com base nas chamadas detectadas.
+    - Adicionar as respostas das ferramentas como ToolMessages na conversa.
+
+    Args:
+        state (GraphState): O estado atual do grafo, contendo o histórico de conversa.
+
+    Returns:
+        GraphState: O estado atualizado, com a conversa estendida com as respostas das ferramentas.
+    """
+
+
+    
     print("-- EXECUTING TOOL NODE --")
 
-    # Aqui, invocamos o tool_node passando a conversa atual.
-    # O ToolNode se encarrega de achar o tool_calls, executar a tool
-    # e retornar a conversa atualizada com os resultados.
     updated_conversation = tool_node.invoke(state["conversation"])
-
-    # Substituímos a conversa anterior pela nova
     state["conversation"] = updated_conversation
 
     return state
+
+
 

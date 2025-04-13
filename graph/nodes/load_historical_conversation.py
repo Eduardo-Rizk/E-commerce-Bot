@@ -1,5 +1,5 @@
 from graph.state import GraphState
-from graph.chain.tools.fetch_conversation_fromFile import fetch_conversation_from_json
+from graph.chain.tools.helper.fetch_conversation_from_json import fetch_conversation_from_json
 
 def load_historical_conversation(state: GraphState) -> GraphState:
     """

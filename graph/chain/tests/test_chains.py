@@ -3,10 +3,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-import graph.chain.tools.fetch_conversation_fromFile as fetch_conversation
+import graph.chain.tools.helper.fetch_conversation_from_json as fetch_conversation
 import os 
 import pytest
-from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, ToolMessage
 from graph.chain.intention_chain import GradedIntention, intetion_grader
 from graph.consts import Intent
 from graph.state import GraphState
@@ -20,6 +20,8 @@ from graph.nodes.execute_tool_node import execute_tool_node
 from graph.chain.order_status_chain import order_status_chain
 
 from graph.nodes.order_status import order_status_node
+
+from graph.nodes.seller_node import seller_node
 
 
 def test_intention():
@@ -45,8 +47,8 @@ def test_help_active_order_should_ask_for_order_number_when_info_empty():
         "intention": Intent.ORDER_STATUS,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "infoProduto": "",
-        "numeroPedido": ""
+        "product_info": "",
+        "order_number": ""
     }
 
     updated_state = help_active_order(state)
@@ -56,7 +58,7 @@ def test_help_active_order_should_ask_for_order_number_when_info_empty():
     # Verifica se a mensagem da AI foi adicionada
     assert isinstance(updated_state["conversation"][-1], AIMessage)
 
-def test_help_active_order_InfoProduto_completo():
+def test_help_active_order_product_info_filled():
     state: GraphState = {
         "conversation": [
             HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
@@ -64,8 +66,8 @@ def test_help_active_order_InfoProduto_completo():
         "intention": Intent.ORDER_STATUS,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "infoProduto": "132dsadw313",
-        "numeroPedido": "123456789"
+        "product_info": "132dsadw313",
+        "order_number": "123456789"
     }
 
     updated_state = help_active_order(state)
@@ -86,43 +88,115 @@ def test_order_status_chain_toolCall_orderStatus():
         "intention": Intent.ORDER_STATUS,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "infoProduto": "132dsadw313",
-        "numeroPedido": "ABC12345"
+        "product_info": "132dsadw313",
+        "order_number": "ABC12345"
     }
 
-    order_status_chain_result = order_status_chain.invoke({"order_number": state["numeroPedido"], "order_information": state["infoProduto"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+    order_status_chain_result = order_status_chain.invoke({"order_number": state["order_number"], "order_information": state["product_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
 
 
     assert isinstance(order_status_chain_result, AIMessage)
     assert order_status_chain_result.tool_calls and order_status_chain_result.tool_calls[0]["name"] == "check_status"
 
 
-    
-def test_order_status_node_with_final_response():
+
+# Teste para verificar o fluxo completo de execução do nó de SELLER
+# São os 3 testes abaixo
+
+
+
+def test_seller_node_tool_call_created():
     state: GraphState = {
         "conversation": [
-            HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
+            HumanMessage(content="Oi, gostaria de saber quais produtos vocês vendem.")
         ],
-        "intention": Intent.ORDER_STATUS,
+        "intention": Intent.PRODUCT_INFO,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "infoProduto": "132dsadw313",
-        "numeroPedido": "ABC12345"
+        "product_info": "",
+        "order_number": "",
+        "catalog_store": ""
     }
 
-    updated_state = order_status_node(state)
+    result = seller_node(state)
+    tool_call = result["conversation"][-1] 
 
-    print("Primeiro State:", updated_state)
 
-    updated_state2 = execute_tool_node(updated_state)
 
-    print("Segundo State:", updated_state2)
+    print("Tool call: ", tool_call)
 
-    updated_state_final_response = order_status_node(updated_state2)
 
-    print("State Final:", updated_state_final_response)
 
-    assert isinstance(updated_state_final_response["conversation"][-1], AIMessage)
+    assert hasattr(tool_call, "tool_calls")
+    assert tool_call.tool_calls[0]["name"] == "fetch_catalog"
+
+def test_execute_tool_node_returns_tool_message():
+
+    tool_call_message = AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "fetch_catalog",
+                "args": {},
+                "id": "call_123",
+                "type": "tool_call"
+            }
+        ]
+    )
+
+    state: GraphState = {
+        "conversation": [tool_call_message],
+        "intention": Intent.PRODUCT_INFO,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "product_info": "",
+        "order_number": "",
+        "catalog_store": ""
+    }
+
+    updated_state = execute_tool_node(state)
+    last_message = updated_state["conversation"][-1]
+
+    print("Last message: Respota da tool", last_message)
+
+
+    assert isinstance(last_message, ToolMessage)
+    assert last_message.name == "fetch_catalog"
+
+
+
+
+def test_seller_node_final_response_after_tool():
+    tool_result = ToolMessage(
+        content='{"products":[{"name":"Camiseta","price":59.9}]}',
+        name="fetch_catalog",
+        tool_call_id="call_123"
+    )
+
+    state: GraphState = {
+        "conversation": [tool_result],
+        "intention": Intent.PRODUCT_INFO,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "product_info": "",
+        "order_number": "",
+        "catalog_store": '{"products":[{"name":"Camiseta","price":59.9}]}'
+    }
+
+    result = seller_node(state)
+    last_message = result["conversation"][-1]
+
+    print("Last message: Reposta da AI", last_message)
+
+
+    assert isinstance(last_message, AIMessage)
+    assert "Camiseta" in last_message.content
+
+
+
+
+
+
 
     
 

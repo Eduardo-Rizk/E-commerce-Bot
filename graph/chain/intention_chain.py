@@ -12,7 +12,10 @@ class GradedIntention(BaseModel):
     "If the person has the intention to check the order status, return an object Intent.ORDER_STATUS."
     "If the intention is to exchange the product, return an object Intent.EXCHANGE."
     "If the intention is to inquire about product information, return an object Intent.PRODUCT_INFO."
-    "If the intention is still not well defined, return an object Intent.GENERIC.")
+    "If the intention is to cancel the order, return an object Intent.CANCEL."
+    "If the intention is to return the product, return an object Intent.DEVOLUTION."
+    "If the intention is still not well defined, return an object Intent.GENERIC."
+    )
 
 
 llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
