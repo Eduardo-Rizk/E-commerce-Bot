@@ -1,8 +1,9 @@
 from graph.state import GraphState
 from graph.chain.seller_chain import seller_chain
-from langchain_core.messages import BaseMessage
+from typing import Any, Dict
 
-def seller_node(state: GraphState) :
+
+def seller_node(state: GraphState) -> Dict[str, Any]:
     """
     Node que executa a seller_chain para responder dúvidas ou fazer recomendações
     com base no catálogo e na conversa atual. Retorna apenas novas mensagens,

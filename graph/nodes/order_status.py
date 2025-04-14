@@ -1,7 +1,9 @@
 from graph.state import GraphState
 
 from graph.chain.order_status_chain import order_status_chain
-def order_status_node(state: GraphState) -> GraphState:
+from typing import Any, Dict
+
+def order_status_node(state: GraphState) -> Dict[str, Any]:
 
     print(" --- ORDER STATUS NODE ---")
     

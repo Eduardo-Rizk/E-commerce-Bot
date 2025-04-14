@@ -4,13 +4,11 @@ from graph.consts import Intent
 from graph.state import GraphState
 from graph.chain.tools.check_status import check_status 
 from graph.chain.tools.fetch_catalog_store import fetch_catalog
+from graph.chain.tools.fallback_notification import fallback_notification
 
 
 
-
-
-
-tool_node = ToolNode(tools=[check_status, fetch_catalog])
+tool_node = ToolNode(tools=[check_status, fetch_catalog,fallback_notification])
 
 
 def execute_tool_node(state: GraphState) -> GraphState:
@@ -30,7 +28,7 @@ def execute_tool_node(state: GraphState) -> GraphState:
     """
 
 
-    
+
     print("-- EXECUTING TOOL NODE --")
 
     updated_conversation = tool_node.invoke(state["conversation"])

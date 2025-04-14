@@ -23,6 +23,8 @@ from graph.nodes.order_status import order_status_node
 
 from graph.nodes.seller_node import seller_node
 
+from graph.nodes.fallback_node import fallback_node
+
 
 def test_intention():
 
@@ -123,9 +125,6 @@ def test_seller_node_tool_call_created():
 
 
 
-    print("Tool call: ", tool_call)
-
-
 
     assert hasattr(tool_call, "tool_calls")
     assert tool_call.tool_calls[0]["name"] == "fetch_catalog"
@@ -157,7 +156,6 @@ def test_execute_tool_node_returns_tool_message():
     updated_state = execute_tool_node(state)
     last_message = updated_state["conversation"][-1]
 
-    print("Last message: Respota da tool", last_message)
 
 
     assert isinstance(last_message, ToolMessage)
@@ -186,7 +184,6 @@ def test_seller_node_final_response_after_tool():
     result = seller_node(state)
     last_message = result["conversation"][-1]
 
-    print("Last message: Reposta da AI", last_message)
 
 
     assert isinstance(last_message, AIMessage)
@@ -195,10 +192,166 @@ def test_seller_node_final_response_after_tool():
 
 
 
+# Teste para verificar o fluxo completo de execução do nó de Fallback
+
+def test_fallback_node_with_cancellation_asks_the_reason():
+    # Simula a conversa onde o cliente já forneceu número do pedido e quer cancelar
+    conversation_mock: list[BaseMessage] = [
+        HumanMessage(content="Olá, estou com um problema no meu pedido."),
+        AIMessage(content="Claro! Pode me informar o número do pedido?"),
+        HumanMessage(content="Sim, é o pedido #98765."),
+        AIMessage(content="Obrigado. Como posso te ajudar com esse pedido?"),
+        HumanMessage(content="Eu gostaria de cancelar o pedido."),
+    ]
+
+    state: GraphState = {
+        "conversation": conversation_mock,
+        "intention": Intent.CANCEL, 
+        "historical_conversation": [],
+        "captured_histoical_conversation": True,
+        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_number": "98765",
+        "catalog_store": ""
+    }
+
+    result = fallback_node(state)
 
 
-
+    print("Last message: Resposta da AI", result["conversation"][-1])
+    assert isinstance(result["conversation"][-1], AIMessage)
     
+
+
+
+
+def test_fallback_node_with_cancellation_calls_tool():
+    conversation_mock: list[BaseMessage] = [
+        HumanMessage(content="Olá, estou com um problema no meu pedido."),
+        AIMessage(content="Claro! Pode me informar o número do pedido?"),
+        HumanMessage(content="Sim, é o pedido #98765."),
+        AIMessage(content="Obrigado. Como posso te ajudar com esse pedido?"),
+        HumanMessage(content="Eu gostaria de cancelar o pedido."),
+        AIMessage(content="Entendo. Pode me dizer o motivo do cancelamento?"),
+        HumanMessage(content="Porque demorou muito para chegar e não preciso mais.")
+    ]
+
+    state: GraphState = {
+        "conversation": conversation_mock,
+        "intention": Intent.CANCEL, 
+        "historical_conversation": [],
+        "captured_histoical_conversation": True,
+        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_number": "98765",
+        "catalog_store": ""
+    }
+
+    result = fallback_node(state)
+
+    print("Last message: Resposta da AI", result["conversation"][-1])
+    assert isinstance(result["conversation"][-1], AIMessage)
+
+
+    from graph.chain.tools.fallback_notification import fallback_notification
+
+def test_fallback_notification_tool_response():
+    conversation_mock = [HumanMessage(content="Olá, estou com um problema no meu pedido."),
+        AIMessage(content="Claro! Pode me informar o número do pedido?"),
+        HumanMessage(content="Sim, é o pedido #98765."),
+        AIMessage(content="Obrigado. Como posso te ajudar com esse pedido?"),
+        HumanMessage(content="Eu gostaria de cancelar o pedido."),
+        AIMessage(content="Entendo. Pode me dizer o motivo do cancelamento?"),
+        HumanMessage(content="Porque demorou muito para chegar e não preciso mais."),
+
+        AIMessage(
+        content="",
+        tool_calls=[
+            {
+                "name": "fallback_notification",
+                "args": {
+                    "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+                    "conversation_summary": (
+                        "O cliente informou que gostaria de cancelar o pedido #98765 "
+                        "porque demorou muito para chegar e não precisa mais."
+                    ),
+                    "reason_contact_support": "Cancelamento do pedido devido à demora na entrega."
+                },
+                "id": "call_123",
+                "type": "tool_call"
+            }])]
+    
+    state: GraphState = {
+        "conversation": conversation_mock,
+        "intention": Intent.CANCEL, 
+        "historical_conversation": [],
+        "captured_histoical_conversation": True,
+        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_number": "98765",
+        "catalog_store": ""
+    }
+
+    updated_state = execute_tool_node(state)
+    last_message = updated_state["conversation"][-1]
+    print("Last message: Resposta da AI", last_message)
+    print("Toda a conversa: Resposta da AI", updated_state["conversation"])
+
+    assert isinstance(last_message, ToolMessage)
+    assert last_message.name == "fallback_notification"
+
+
+def test_fallback_notification_final_response():
+    conversation_mock = [HumanMessage(content="Olá, estou com um problema no meu pedido."),
+    AIMessage(content="Claro! Pode me informar o número do pedido?"),
+    HumanMessage(content="Sim, é o pedido #98765."),
+    AIMessage(content="Obrigado. Como posso te ajudar com esse pedido?"),
+    HumanMessage(content="Eu gostaria de cancelar o pedido."),
+    AIMessage(content="Entendo. Pode me dizer o motivo do cancelamento?"),
+    HumanMessage(content="Porque demorou muito para chegar e não preciso mais."),
+
+    AIMessage(
+    content="",
+    tool_calls=[
+        {
+            "name": "fallback_notification",
+            "args": {
+                "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+                "conversation_summary": (
+                    "O cliente informou que gostaria de cancelar o pedido #98765 "
+                    "porque demorou muito para chegar e não precisa mais."
+                ),
+                "reason_contact_support": "Cancelamento do pedido devido à demora na entrega."
+            },
+            "id": "call_123",
+            "type": "tool_call"
+        }]),
+    
+    ToolMessage(content='Human agent has been notified successfully!\nPayload:\n{\n  "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",\n  "conversation_summary": "O cliente informou que gostaria de cancelar o pedido #98765 porque demorou muito para chegar e não precisa mais.",\n  "reason_contact_support": "Cancelamento do pedido devido à demora na entrega."\n}', name='fallback_notification', tool_call_id='call_123')]
+
+
+    state: GraphState = {
+        "conversation": conversation_mock,
+        "intention": Intent.CANCEL, 
+        "historical_conversation": [],
+        "captured_histoical_conversation": True,
+        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_number": "98765",
+        "catalog_store": ""
+    }
+
+    result = fallback_node(state)
+    
+
+    print("Last message: Resposta da AI", result)
+
+    assert isinstance(result["conversation"][-1], AIMessage)
+
+
+
+
+
+
+
+
+
 
 
 

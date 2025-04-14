@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 
 
-system = """You are a polite and helpful customer support representative. The customer has contacted you about an issue related to their order. Your role is to assist them, but first you need the customer’s order number to proceed. Kindly request the order number, and explain that it is required to provide the proper support and resolution."""
+system = """Você é um representante de atendimento ao cliente educado e prestativo. O cliente entrou em contato sobre um problema relacionado ao pedido dele. Seu papel é ajudá-lo, mas primeiro você precisa do número do pedido para prosseguir. Solicite gentilmente o número do pedido, explicando que ele é necessário para continuar com o suporte."""
 
 order_number_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
