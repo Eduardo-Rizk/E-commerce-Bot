@@ -9,7 +9,7 @@ system = """Você é um representante de atendimento ao cliente educado e presta
 
 order_number_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
-    ("user", "Current conversation: {conversation}"),
+    ("user", "Current conversation: {messages}"),
 ])
 
 llm = ChatOpenAI(model="gpt-4o-mini",temperature=0,)

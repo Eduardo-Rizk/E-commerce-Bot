@@ -30,7 +30,7 @@ Your goal is to make the customer feel well taken care of and help them find wha
 
 status_chain_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
-    ("user", "Current conversation: {conversation}"),
+    ("user", "Current conversation: {messages}"),
     ("user", "Historical conversation: {historical_conversation}"),
     ("user", "Store Catalog: {catalog_store}" )
 ])

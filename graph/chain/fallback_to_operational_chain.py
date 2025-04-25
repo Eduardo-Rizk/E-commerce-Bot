@@ -33,7 +33,7 @@ llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
 
 status_chain_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
-    ("user", "Current conversation: {conversation}"),
+    ("user", "Current conversation: {messages}"),
     ("user", "Historical conversation: {historical_conversation}"),
     ("user", "Order information: {order_information}"),
 ])

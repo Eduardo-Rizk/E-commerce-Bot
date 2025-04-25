@@ -14,7 +14,7 @@ class GraphState(TypedDict):
 
     """
 
-    conversation : Annotated[List[BaseMessage], add_messages]
+    messages : Annotated[List[BaseMessage], add_messages]
     intention: Intent
     historical_conversation: List[BaseMessage]
     captured_histoical_conversation: bool

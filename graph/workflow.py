@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 
 
 from graph.state import GraphState
+from langchain_core.messages import AIMessage
 
 from langgraph.graph import END, StateGraph
 
@@ -23,46 +24,44 @@ load_dotenv()
 from graph.consts import Intent, status
 
 
+from graph.consts import Intent
+
+
 def condional_entry_point(state: GraphState):
     print(" --- CONDITIONAL ENTRY POINT ---")
-
-    if state["captured_histoical_conversation"]:
+    if state.get("captured_histoical_conversation", False):
         print(" --INTENTION---")
         return INTENTION
     else:
-        print("--RETRIEVE HISTORICAL CONVERSATION---")
+        print("--RETRIEVE HISTÓRICAL CONVERSATION---")
         return RETRIEVE_HISTORICAL_CONVERSATION
-    
+
+
 
 def Intention_redirector(state: GraphState):
     print(" --- INTENTION REDIRECTOR ---")
-    if state["intention"] == Intent.ORDER_STATUS:
-        if state["order_number"]:
-            if state["order_info"] != "" or None:
-                return ORDER_STATUS
-            else:
-                return LOAD_ORDER_INFO
-        else:
-            return HELP_ACTIVE_ORDER
-        
-    elif state["intention"] == Intent.EXCHANGE or state["intention"] == Intent.DEVOLUTION or state["intention"] == Intent.CANCEL:
-        if state["order_number"]:
-            if state["order_info"] != "" or None:
-                return FALLBACK
-            else:
-                return LOAD_ORDER_INFO
-        else:
-            return HELP_ACTIVE_ORDER
-        
-    else:
-        return SELLER
-    
+    intent        = state.get("intention", Intent.GENERIC)
+    order_number  = state.get("order_number", False)
+    has_orderinfo = bool(state.get("order_info"))
+
+    if intent == Intent.ORDER_STATUS:
+        if order_number:
+            return ORDER_STATUS if has_orderinfo else LOAD_ORDER_INFO
+        return HELP_ACTIVE_ORDER
+
+    elif intent in (Intent.EXCHANGE, Intent.DEVOLUTION, Intent.CANCEL):
+        if order_number:
+            return FALLBACK if has_orderinfo else LOAD_ORDER_INFO
+        return HELP_ACTIVE_ORDER
+
+    return SELLER
+
+
+
 def Order_Info_Status_Fallback(state: GraphState):
     print(" --- ORDER INFO STATUS FALLBACK ---")
-    if state["intention"] == Intent.ORDER_STATUS:
-        return ORDER_STATUS
-    else:
-        return FALLBACK
+    intent = state.get("intention", Intent.GENERIC)
+    return ORDER_STATUS if intent == Intent.ORDER_STATUS else FALLBACK
 
 
 graph = StateGraph(GraphState)
@@ -111,28 +110,28 @@ graph.add_conditional_edges(
     ORDER_STATUS,
     tools_condition,
     {
-        EXECUTE_TOOL: EXECUTE_TOOL,
+        "tools": EXECUTE_TOOL,
     },
 )
 graph.add_conditional_edges(
     FALLBACK,
     tools_condition,
     {
-        EXECUTE_TOOL: EXECUTE_TOOL,
+        "tools": EXECUTE_TOOL,
     },
 )
 graph.add_conditional_edges(
     LOAD_ORDER_INFO,
     tools_condition,
     {
-        EXECUTE_TOOL: EXECUTE_TOOL,
+        "tools": EXECUTE_TOOL,
     },
 )
 graph.add_conditional_edges(
     SELLER,
     tools_condition,
     {
-        EXECUTE_TOOL: EXECUTE_TOOL,
+        "tools": EXECUTE_TOOL,
     },
 )
 
@@ -153,7 +152,7 @@ app = graph.compile(
         interrupt_after= [SELLER, ORDER_STATUS, FALLBACK]
 )
 
-thread = {"configurable": {"thread_id": "777"}}         # 1 por conversa
+thread = {"configurable": {"thread_id": "777"}}        
 
 while True:
     user = input("Você: ").strip()
@@ -164,10 +163,8 @@ while True:
         {"user_message": user},
         thread)
 
-    # 3) pega a última mensagem da IA
-    from langchain_core.messages import AIMessage
     last_ai = next(
-        (m for m in reversed(state["conversation"]) if isinstance(m, AIMessage)),
+        (m for m in reversed(state["messages"]) if isinstance(m, AIMessage)),
         None,
     )
 

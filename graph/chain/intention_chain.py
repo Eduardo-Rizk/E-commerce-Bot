@@ -25,7 +25,7 @@ system = """You are a conversation analyzer, that analyzes the conversation and 
 
 intetion_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
-    ("user", "Current conversation: {conversation}"),
+    ("user", "Current conversation: {messages}"),
 ])
 
 intetion_grader = intetion_prompt | structured_llm_grader

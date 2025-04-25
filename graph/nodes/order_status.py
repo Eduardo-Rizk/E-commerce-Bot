@@ -1,17 +1,20 @@
 from graph.state import GraphState
-
 from graph.chain.order_status_chain import order_status_chain
-from typing import Any, Dict
+from typing  import Dict, Any
 
 def order_status_node(state: GraphState) -> Dict[str, Any]:
-
     print(" --- ORDER STATUS NODE ---")
-    
-    order_number = state["order_number"]
 
-    order_status_chain_result = order_status_chain.invoke({"order_number": order_number, "order_information": state["order_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+    order_number   = state.get("order_number")                
+    order_info     = state.get("order_info", "")
+    messages   = state.get("messages", [])
+    hist_conv      = state.get("historical_conversation", [])
 
+    result = order_status_chain.invoke({
+        "order_number":         order_number,
+        "order_information":    order_info,
+        "messages":         messages,
+        "historical_conversation": hist_conv,
+    })
 
-   
-    
-    return {"conversation": [order_status_chain_result]}
+    return {"messages": [result]}

@@ -24,7 +24,7 @@ Follow these steps strictly so you do not generate unnecessary tool calls.
 
 status_chain_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
-    ("user", "Current conversation: {conversation}"),
+    ("user", "Current conversation: {messages}"),
     ("user", "Historical conversation: {historical_conversation}"),
     ("user", "Order information: {order_information}"),
     ("user", "If the order number is already in the conversation the value will be TRUE, otherwise it will be FALSE: {order_number}"),
