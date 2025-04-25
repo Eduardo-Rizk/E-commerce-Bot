@@ -8,7 +8,8 @@ class GradedIntention(BaseModel):
     """
     Class to represent the intention of the graph.
     """
-    intention: Intent = Field(description="I want you to define the intention of the user based on the conversation."
+    intention: Intent = Field(description=
+    "I want you to define the intention of the user based on the conversation."
     "If the person has the intention to check the order status, return an object Intent.ORDER_STATUS."
     "If the intention is to exchange the product, return an object Intent.EXCHANGE."
     "If the intention is to inquire about product information, return an object Intent.PRODUCT_INFO."
@@ -16,7 +17,6 @@ class GradedIntention(BaseModel):
     "If the intention is to return the product, return an object Intent.DEVOLUTION."
     "If the intention is still not well defined, return an object Intent.GENERIC."
     )
-
 
 llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
 structured_llm_grader = llm.with_structured_output(GradedIntention)

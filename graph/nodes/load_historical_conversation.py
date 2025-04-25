@@ -1,22 +1,19 @@
 from graph.state import GraphState
 from graph.chain.tools.helper.fetch_conversation_from_json import fetch_conversation_from_json
+from typing import Any, Dict
 
-def load_historical_conversation(state: GraphState) -> GraphState:
+def load_historical_conversation(state: GraphState) -> Dict[str, any]:
     """
     Carrega o histórico de conversas (mock) de um arquivo JSON
     e atualiza state['historical_conversation'] apenas na primeira vez.
     """
-    if state["captured_histoical_conversation"]:
-        # Se já foi carregado, não faz nada
-        print("[load_historical_conversation_if_needed] Histórico já carregado.")
-        return state
+
 
     print(" --- CARREGANDO O HISTÓRICO ---")
-    filepath = "conversation_history.json"
+    filepath = "graph/conversation_history.json"
     historical_messages = fetch_conversation_from_json(filepath)
 
-    state["historical_conversation"] = historical_messages
-    state["captured_histoical_conversation"] = True
+  
 
     
-    return state    
+    return {"historical_conversation": historical_messages, "captured_histoical_conversation": True}   

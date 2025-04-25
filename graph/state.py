@@ -18,8 +18,8 @@ class GraphState(TypedDict):
     intention: Intent
     historical_conversation: List[BaseMessage]
     captured_histoical_conversation: bool
-    product_info: str
-    order_number: str
+    order_info: str
+    order_number: bool
     catalog_store: str
 
     

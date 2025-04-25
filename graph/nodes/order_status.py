@@ -9,7 +9,7 @@ def order_status_node(state: GraphState) -> Dict[str, Any]:
     
     order_number = state["order_number"]
 
-    order_status_chain_result = order_status_chain.invoke({"order_number": order_number, "order_information": state["product_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+    order_status_chain_result = order_status_chain.invoke({"order_number": order_number, "order_information": state["order_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
 
 
    

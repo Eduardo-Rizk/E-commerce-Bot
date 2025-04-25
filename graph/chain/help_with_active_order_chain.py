@@ -15,7 +15,7 @@ order_number_prompt = ChatPromptTemplate.from_messages([
 llm = ChatOpenAI(model="gpt-4o-mini",temperature=0,)
 
 
-help_with_order_chain = order_number_prompt | llm | StrOutputParser()
+help_with_order_chain = order_number_prompt | llm 
 
 
 

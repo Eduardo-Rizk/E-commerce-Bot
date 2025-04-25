@@ -41,7 +41,7 @@ def test_intention():
     assert result.intention == Intent.ORDER_STATUS, f"Esperado: {Intent.ORDER_STATUS}, obtido: {result.intention}"
 
 
-def test_help_active_order_should_ask_for_order_number_when_info_empty():
+def test_help_active_order_should_ask_for_order_number():
     state: GraphState = {
         "conversation": [
             HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
@@ -49,52 +49,38 @@ def test_help_active_order_should_ask_for_order_number_when_info_empty():
         "intention": Intent.ORDER_STATUS,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "product_info": "",
-        "order_number": ""
+        "order_info": "",
+        "order_number": False,
+        "catalog_store": ""
     }
 
     updated_state = help_active_order(state)
 
 
+    print("AI PERGUNTANDO O NUMERO DO PEDIDO: ", updated_state["conversation"][-1])
 
-    # Verifica se a mensagem da AI foi adicionada
+    
     assert isinstance(updated_state["conversation"][-1], AIMessage)
 
-def test_help_active_order_product_info_filled():
-    state: GraphState = {
-        "conversation": [
-            HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
-        ],
-        "intention": Intent.ORDER_STATUS,
-        "historical_conversation": [],
-        "captured_histoical_conversation": False,
-        "product_info": "132dsadw313",
-        "order_number": "123456789"
-    }
-
-    updated_state = help_active_order(state)
-
-
-
-    # Verifica se não houve adição de mensagem da AI
-    assert len(updated_state["conversation"]) == 1, "A conversa não deve ter mudado."
-    assert isinstance(updated_state["conversation"][-1], HumanMessage)
 
 
 
 def test_order_status_chain_toolCall_orderStatus():
     state: GraphState = {
         "conversation": [
-            HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
+            HumanMessage(content="Oi, gostaria de saber onde está meu pedido."),
+            AIMessage(content="Claro! Pode me informar o número do pedido?"),
+            HumanMessage(content="Sim, é o pedido ABC12345.")
         ],
         "intention": Intent.ORDER_STATUS,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "product_info": "132dsadw313",
-        "order_number": "ABC12345"
+        "order_info": "132dsadw313",
+        "order_number": True,
+        "catalog_store": ""
     }
 
-    order_status_chain_result = order_status_chain.invoke({"order_number": state["order_number"], "order_information": state["product_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+    order_status_chain_result = order_status_chain.invoke({"order_number": state["order_number"], "order_information": state["order_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
 
 
     assert isinstance(order_status_chain_result, AIMessage)
@@ -115,7 +101,7 @@ def test_seller_node_tool_call_created():
         "intention": Intent.PRODUCT_INFO,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "product_info": "",
+        "order_info": "",
         "order_number": "",
         "catalog_store": ""
     }
@@ -148,7 +134,7 @@ def test_execute_tool_node_returns_tool_message():
         "intention": Intent.PRODUCT_INFO,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "product_info": "",
+        "order_info": "",
         "order_number": "",
         "catalog_store": ""
     }
@@ -176,7 +162,7 @@ def test_seller_node_final_response_after_tool():
         "intention": Intent.PRODUCT_INFO,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
-        "product_info": "",
+        "order_info": "",
         "order_number": "",
         "catalog_store": '{"products":[{"name":"Camiseta","price":59.9}]}'
     }
@@ -209,7 +195,7 @@ def test_fallback_node_with_cancellation_asks_the_reason():
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
-        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
         "order_number": "98765",
         "catalog_store": ""
     }
@@ -240,7 +226,7 @@ def test_fallback_node_with_cancellation_calls_tool():
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
-        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
         "order_number": "98765",
         "catalog_store": ""
     }
@@ -268,7 +254,7 @@ def test_fallback_notification_tool_response():
             {
                 "name": "fallback_notification",
                 "args": {
-                    "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+                    "order_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
                     "conversation_summary": (
                         "O cliente informou que gostaria de cancelar o pedido #98765 "
                         "porque demorou muito para chegar e não precisa mais."
@@ -284,7 +270,7 @@ def test_fallback_notification_tool_response():
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
-        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
         "order_number": "98765",
         "catalog_store": ""
     }
@@ -313,7 +299,7 @@ def test_fallback_notification_final_response():
         {
             "name": "fallback_notification",
             "args": {
-                "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+                "order_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
                 "conversation_summary": (
                     "O cliente informou que gostaria de cancelar o pedido #98765 "
                     "porque demorou muito para chegar e não precisa mais."
@@ -324,7 +310,7 @@ def test_fallback_notification_final_response():
             "type": "tool_call"
         }]),
     
-    ToolMessage(content='Human agent has been notified successfully!\nPayload:\n{\n  "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",\n  "conversation_summary": "O cliente informou que gostaria de cancelar o pedido #98765 porque demorou muito para chegar e não precisa mais.",\n  "reason_contact_support": "Cancelamento do pedido devido à demora na entrega."\n}', name='fallback_notification', tool_call_id='call_123')]
+    ToolMessage(content='Human agent has been notified successfully!\nPayload:\n{\n  "order_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",\n  "conversation_summary": "O cliente informou que gostaria de cancelar o pedido #98765 porque demorou muito para chegar e não precisa mais.",\n  "reason_contact_support": "Cancelamento do pedido devido à demora na entrega."\n}', name='fallback_notification', tool_call_id='call_123')]
 
 
     state: GraphState = {
@@ -332,7 +318,7 @@ def test_fallback_notification_final_response():
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
-        "product_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
+        "order_info": "Pedido #98765: Camiseta Básica, cor branca, tamanho M.",
         "order_number": "98765",
         "catalog_store": ""
     }

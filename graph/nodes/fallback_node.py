@@ -5,6 +5,6 @@ def fallback_node(state: GraphState) -> Dict[str, Any]:
 
     print(" --- HELP FALLBACK NODE ---")
     
-    fallback_chain_result = fallback_to_operational_chain.invoke({"order_information": state["product_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+    fallback_chain_result = fallback_to_operational_chain.invoke({"order_information": state["order_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
        
     return {"conversation": [fallback_chain_result]}

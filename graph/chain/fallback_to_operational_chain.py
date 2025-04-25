@@ -4,7 +4,7 @@ from langchain_openai import ChatOpenAI
 
 from graph.chain.tools.fallback_notification import fallback_notification
 system = """
-Você é um(a) assistente de vendas responsável por ajudar o cliente no que for necessário. 
+Você é um assistente de vendas responsável por ajudar o cliente no que for necessário. 
 Seu fluxo de trabalho para pedidos de cancelamento segue as regras abaixo:
 
 1. Se o cliente solicitar o cancelamento e ainda **não** tiver explicado o motivo:

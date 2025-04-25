@@ -27,7 +27,7 @@ status_chain_prompt = ChatPromptTemplate.from_messages([
     ("user", "Current conversation: {conversation}"),
     ("user", "Historical conversation: {historical_conversation}"),
     ("user", "Order information: {order_information}"),
-    ("user", "Number of the order: {order_number}"),
+    ("user", "If the order number is already in the conversation the value will be TRUE, otherwise it will be FALSE: {order_number}"),
 ])
 
 tools = [check_status]

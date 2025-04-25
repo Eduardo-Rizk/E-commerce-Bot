@@ -6,19 +6,17 @@ from langchain_core.messages import AIMessage
 
 def help_active_order(state: GraphState) -> GraphState:
     """
-    Se order_number estiver vazio, chama a chain que solicita o número do pedido
+    Se order_number for FALSE, chama a chain que solicita o número do pedido
     e adiciona a resposta ao histórico de conversa como uma AIMessage.
-    Caso contrário, retorna o state sem alteração
     """
     print(" --- HELP ACTIVE ORDER NODE ---")
 
-    if not state.get("order_number"):  
-        result = help_with_order_chain.invoke({"conversation": state["conversation"]})
+ 
+    result = help_with_order_chain.invoke({"conversation": state["conversation"]})
 
-        ai_response = AIMessage(content=str(result))
+    return {
+        "conversation": [result],
+        "order_number": True,
+    }
 
-        state["conversation"].append(ai_response)
 
-        return state
-
-    return state

@@ -1,6 +1,6 @@
 {
     "order_id": 12345,
-    "order_number": "",
+    "order_number": "ABC12345",
     "purchase_date": "2025-03-14T10:32:00Z",
     "customer_name": "João da Silva",
     "email": "joao.silva@example.com",

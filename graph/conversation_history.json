@@ -1,0 +1,27 @@
+[
+    {
+      "role": "user",
+      "content": "Olá, bom dia! Gostaria de saber como está o status do meu pedido. Fiz a compra há alguns dias e ainda não recebi nenhuma atualização."
+    },
+    {
+      "role": "assistant",
+      "content": "Bom dia! Claro, vou te ajudar com isso. Você poderia, por gentileza, confirmar o número do seu pedido?"
+    },
+    {
+      "role": "user",
+      "content": "Sim, o número do pedido é #123456."
+    },
+    {
+      "role": "assistant",
+      "content": "Perfeito, obrigado! Estou verificando aqui no sistema... Seu pedido #123456 já foi despachado e está atualmente em trânsito. Ele deve chegar ao seu endereço nos próximos dias úteis."
+    },
+    {
+      "role": "user",
+      "content": "Ah, ótimo! Obrigado pelo retorno :)"
+    },
+    {
+      "role": "assistant",
+      "content": "Disponha! Fico feliz em ajudar. Se precisar de mais alguma coisa, estou à disposição."
+    }
+  ]
+  
