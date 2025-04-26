@@ -19,7 +19,7 @@ from graph.nodes.execute_tool_node import execute_tool_node
 
 from graph.chain.order_status_chain import order_status_chain
 
-from graph.nodes.order_status import order_status_node
+from graph.nodes.tool_call_order_status import order_status_tool_call
 
 from graph.nodes.seller_node import seller_node
 

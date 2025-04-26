@@ -7,8 +7,8 @@ def fallback_node(state: GraphState) -> Dict[str, Any]:
 
     # leitura segura com defaults
     fallback_chain_result = fallback_to_operational_chain.invoke({
-        "order_information":      state.get("order_info", ""),
-        "messages":           state.get("messages", []),
+        "order_information": state.get("order_info", ""),
+        "messages": state.get("messages", []),
         "historical_conversation": state.get("historical_conversation", []),
     })
 

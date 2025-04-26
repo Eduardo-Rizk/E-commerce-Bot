@@ -6,18 +6,19 @@ from langchain_core.messages import AIMessage
 
 from langgraph.graph import END, StateGraph
 
-from graph.consts import RETRIEVE_HISTORICAL_CONVERSATION, INTENTION, FALLBACK, HELP_ACTIVE_ORDER, LOAD_ORDER_INFO, ORDER_STATUS, SELLER, EXECUTE_TOOL
+from graph.consts import RETRIEVE_HISTORICAL_CONVERSATION, INTENTION, FALLBACK, HELP_ACTIVE_ORDER, LOAD_ORDER_INFO, ORDER_STATUS, SELLER, EXECUTE_TOOL, ORDER_STATUS_ANSWER,SELLER_ANSWER
 
 from graph.nodes.load_historical_conversation import load_historical_conversation
 from graph.nodes.IntentionGrader import intention_node
 from graph.nodes.help_atctive_order import help_active_order
 from graph.nodes.load_order_info import load_order_info_node
-from graph.nodes.order_status import order_status_node
+from graph.nodes.tool_call_order_status import order_status_tool_call
 from graph.nodes.fallback_node import fallback_node
 from graph.nodes.execute_tool_node import execute_tool_node
 from graph.nodes.seller_node import seller_node
 from langgraph.prebuilt import tools_condition
-
+from graph.nodes.order_status_answer import order_status_answer
+from graph.nodes.seller_answer_node import seller_answer_node
 from langgraph.checkpoint.memory import MemorySaver
 load_dotenv()
 
@@ -64,16 +65,42 @@ def Order_Info_Status_Fallback(state: GraphState):
     return ORDER_STATUS if intent == Intent.ORDER_STATUS else FALLBACK
 
 
+def Execute_Tool_Redirector(state: GraphState):
+    print(" --- TOOL REDIRECTOR ---")
+    messages = state.get("messages", [])
+    last_tool_name = None
+
+    # varre do fim para o começo, pois a mensagem mais recente está no fim
+    for msg in reversed(messages):
+        if isinstance(msg, AIMessage):
+            tool_calls = msg.additional_kwargs.get("tool_calls", [])
+            if tool_calls:
+                last_tool_name = tool_calls[-1]["function"]["name"]
+                break
+
+    if   last_tool_name == "check_status":
+        return ORDER_STATUS_ANSWER
+    elif last_tool_name == "fallback_notification":
+        return FALLBACK
+    elif last_tool_name == "fetch_catalog":
+        return SELLER_ANSWER
+    else:
+        return FALLBACK
+
+
+
 graph = StateGraph(GraphState)
 
 graph.add_node(RETRIEVE_HISTORICAL_CONVERSATION, load_historical_conversation)
 graph.add_node(INTENTION, intention_node)
 graph.add_node(HELP_ACTIVE_ORDER, help_active_order)
 graph.add_node(LOAD_ORDER_INFO, load_order_info_node)
-graph.add_node(ORDER_STATUS, order_status_node)
+graph.add_node(ORDER_STATUS, order_status_tool_call)
+graph.add_node(ORDER_STATUS_ANSWER, order_status_answer)
 graph.add_node(FALLBACK, fallback_node)
 graph.add_node(EXECUTE_TOOL, execute_tool_node)
 graph.add_node(SELLER, seller_node)
+graph.add_node(SELLER_ANSWER, seller_answer_node)
 
 graph.set_conditional_entry_point(condional_entry_point,
                                   {
@@ -121,13 +148,6 @@ graph.add_conditional_edges(
     },
 )
 graph.add_conditional_edges(
-    LOAD_ORDER_INFO,
-    tools_condition,
-    {
-        "tools": EXECUTE_TOOL,
-    },
-)
-graph.add_conditional_edges(
     SELLER,
     tools_condition,
     {
@@ -135,24 +155,36 @@ graph.add_conditional_edges(
     },
 )
 
-graph.add_edge(EXECUTE_TOOL, SELLER)
-graph.add_edge(EXECUTE_TOOL, FALLBACK)
-graph.add_edge(EXECUTE_TOOL, ORDER_STATUS)
-graph.add_edge(EXECUTE_TOOL, LOAD_ORDER_INFO)
 
+
+graph.add_conditional_edges(
+    EXECUTE_TOOL,
+    Execute_Tool_Redirector,
+    {
+        ORDER_STATUS_ANSWER: ORDER_STATUS_ANSWER,
+        FALLBACK          : FALLBACK,
+        SELLER_ANSWER            : SELLER_ANSWER,
+    },
+)
 
 
 
 from langchain.schema import AIMessage
 
-# 1)  compile
+
 memory = MemorySaver()
 app = graph.compile(
         checkpointer   = memory,
-        interrupt_after= [SELLER, ORDER_STATUS, FALLBACK]
+        interrupt_after= [SELLER_ANSWER, ORDER_STATUS_ANSWER, FALLBACK]
 )
 
+app.get_graph().draw_mermaid_png(output_file_path="graph.png")
+
+
 thread = {"configurable": {"thread_id": "777"}}        
+
+from langchain_core.messages import HumanMessage, AIMessage
+
 
 while True:
     user = input("Você: ").strip()
@@ -160,16 +192,19 @@ while True:
         break
 
     state = app.invoke(
-        {"user_message": user},
-        thread)
+        {"messages": [HumanMessage(content=user)]},   # <- mudou aqui
+        thread
+    )
 
+    # pega a última resposta do bot (caso não seja call de ferramenta)
     last_ai = next(
         (m for m in reversed(state["messages"]) if isinstance(m, AIMessage)),
         None,
     )
 
-    if last_ai and not last_ai.additional_kwargs.get("tool_calls"):
+    if last_ai:                     
         print(f"Bot : {last_ai.content}\n")
+
 
 
 
