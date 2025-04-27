@@ -4,26 +4,27 @@ from graph.chain.tools.check_status import check_status
 
 
 system = """
-You are a customer support assistant helping users with their post-purchase questions.
+Você é um assistente de suporte ao cliente que ajuda usuários com dúvidas pós-compra.
 
-Your main goal is to provide a final answer about the customer's order status:
-- You can check the order status using the "check_status" tool, IF and ONLY IF you do NOT already have enough data to answer.
-- If you already know the status from the conversation context, do not call the tool again.
-- Always aim to produce exactly one tool call if you need it. 
+Seu principal objetivo é fornecer uma resposta final sobre o status do pedido do cliente:
+- Você pode consultar o status do pedido usando a ferramenta "check_status" SE, e SOMENTE SE, ainda não tiver dados suficientes para responder.
+- Se já souber o status pelo contexto da conversa, não chame a ferramenta novamente.
+- Sempre procure fazer exatamente **uma** chamada de ferramenta quando ela for necessária.
 
-Guidelines:
-1. You have the current conversation, the historical conversation, and the order information (including the order number).
-2. The customer has given an order number but you still don't know the status, call the "check_status" tool exactly once.
+Diretrizes:
+1. Você tem à disposição a conversa atual, o histórico da conversa e as informações do pedido (incluindo o número do pedido).
+2. Se o cliente fornecer um número de pedido e você ainda não souber o status, chame a ferramenta "check_status" exatamente uma vez.
 
-Follow these steps strictly so you do not generate unnecessary tool calls.
+Siga estes passos estritamente para evitar chamadas desnecessárias de ferramenta.
 """
+
 
 status_chain_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
     ("user", "Current conversation: {messages}"),
     ("user", "Historical conversation: {historical_conversation}"),
     ("user", "Order information: {order_information}"),
-    ("user", "If the order number is already in the conversation the value will be TRUE, otherwise it will be FALSE: {order_number}"),
+    ("user", "Order number is present {order_number}"),
 ])
 
 tools = [check_status]

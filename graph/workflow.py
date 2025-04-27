@@ -6,7 +6,7 @@ from langchain_core.messages import AIMessage
 
 from langgraph.graph import END, StateGraph
 
-from graph.consts import RETRIEVE_HISTORICAL_CONVERSATION, INTENTION, FALLBACK, HELP_ACTIVE_ORDER, LOAD_ORDER_INFO, ORDER_STATUS, SELLER, EXECUTE_TOOL, ORDER_STATUS_ANSWER,SELLER_ANSWER
+from graph.consts import RETRIEVE_HISTORICAL_CONVERSATION, INTENTION, FALLBACK, HELP_ACTIVE_ORDER, LOAD_ORDER_INFO, ORDER_STATUS, SELLER, EXECUTE_TOOL, ORDER_STATUS_ANSWER,SELLER_ANSWER, FALLBACK_ANSWER, FALLBACK_ASK_MOTIVATION
 
 from graph.nodes.load_historical_conversation import load_historical_conversation
 from graph.nodes.IntentionGrader import intention_node
@@ -14,6 +14,9 @@ from graph.nodes.help_atctive_order import help_active_order
 from graph.nodes.load_order_info import load_order_info_node
 from graph.nodes.tool_call_order_status import order_status_tool_call
 from graph.nodes.fallback_node import fallback_node
+from graph.nodes.fallback_ask_motivation import fallback_ask_motivation
+from graph.nodes.fallback_answer import fallback_answer
+
 from graph.nodes.execute_tool_node import execute_tool_node
 from graph.nodes.seller_node import seller_node
 from langgraph.prebuilt import tools_condition
@@ -44,6 +47,7 @@ def Intention_redirector(state: GraphState):
     intent        = state.get("intention", Intent.GENERIC)
     order_number  = state.get("order_number", False)
     has_orderinfo = bool(state.get("order_info"))
+    has_motivation = state.get("captured_motivation", False)
 
     if intent == Intent.ORDER_STATUS:
         if order_number:
@@ -52,7 +56,13 @@ def Intention_redirector(state: GraphState):
 
     elif intent in (Intent.EXCHANGE, Intent.DEVOLUTION, Intent.CANCEL):
         if order_number:
-            return FALLBACK if has_orderinfo else LOAD_ORDER_INFO
+            if has_orderinfo:
+                if has_motivation:
+                    return FALLBACK
+                else:
+                    return FALLBACK_ASK_MOTIVATION
+            else:
+                return LOAD_ORDER_INFO
         return HELP_ACTIVE_ORDER
 
     return SELLER
@@ -62,7 +72,13 @@ def Intention_redirector(state: GraphState):
 def Order_Info_Status_Fallback(state: GraphState):
     print(" --- ORDER INFO STATUS FALLBACK ---")
     intent = state.get("intention", Intent.GENERIC)
-    return ORDER_STATUS if intent == Intent.ORDER_STATUS else FALLBACK
+    if intent == Intent.ORDER_STATUS:
+        return ORDER_STATUS
+    else:
+        if state.get("captured_motivation", False):
+            return FALLBACK
+        else:
+            return FALLBACK_ASK_MOTIVATION
 
 
 def Execute_Tool_Redirector(state: GraphState):
@@ -95,12 +111,24 @@ graph.add_node(RETRIEVE_HISTORICAL_CONVERSATION, load_historical_conversation)
 graph.add_node(INTENTION, intention_node)
 graph.add_node(HELP_ACTIVE_ORDER, help_active_order)
 graph.add_node(LOAD_ORDER_INFO, load_order_info_node)
+
+
 graph.add_node(ORDER_STATUS, order_status_tool_call)
 graph.add_node(ORDER_STATUS_ANSWER, order_status_answer)
+
+
 graph.add_node(FALLBACK, fallback_node)
+graph.add_node(FALLBACK_ASK_MOTIVATION, fallback_ask_motivation)
+graph.add_node(FALLBACK_ANSWER, fallback_answer)
+
+
 graph.add_node(EXECUTE_TOOL, execute_tool_node)
+
+
 graph.add_node(SELLER, seller_node)
 graph.add_node(SELLER_ANSWER, seller_answer_node)
+from langchain_core.messages import HumanMessage, AIMessage
+
 
 graph.set_conditional_entry_point(condional_entry_point,
                                   {
@@ -115,6 +143,7 @@ graph.add_conditional_edges(
     {
         ORDER_STATUS: ORDER_STATUS,
         FALLBACK: FALLBACK,
+        FALLBACK_ASK_MOTIVATION: FALLBACK_ASK_MOTIVATION,
         HELP_ACTIVE_ORDER: HELP_ACTIVE_ORDER,
         LOAD_ORDER_INFO: LOAD_ORDER_INFO,
         SELLER: SELLER,
@@ -128,6 +157,7 @@ graph.add_conditional_edges(
     {
         ORDER_STATUS: ORDER_STATUS,
         FALLBACK: FALLBACK,
+        FALLBACK_ASK_MOTIVATION: FALLBACK_ASK_MOTIVATION,
     }
 
 )
@@ -138,6 +168,7 @@ graph.add_conditional_edges(
     tools_condition,
     {
         "tools": EXECUTE_TOOL,
+        END: ORDER_STATUS_ANSWER,
     },
 )
 graph.add_conditional_edges(
@@ -145,6 +176,7 @@ graph.add_conditional_edges(
     tools_condition,
     {
         "tools": EXECUTE_TOOL,
+        END: FALLBACK_ANSWER,
     },
 )
 graph.add_conditional_edges(
@@ -152,6 +184,7 @@ graph.add_conditional_edges(
     tools_condition,
     {
         "tools": EXECUTE_TOOL,
+        END: SELLER_ANSWER,
     },
 )
 
@@ -167,15 +200,13 @@ graph.add_conditional_edges(
     },
 )
 
-
-
-from langchain.schema import AIMessage
+graph.add_edge(FALLBACK_ASK_MOTIVATION, FALLBACK)
 
 
 memory = MemorySaver()
 app = graph.compile(
         checkpointer   = memory,
-        interrupt_after= [SELLER_ANSWER, ORDER_STATUS_ANSWER, FALLBACK]
+        interrupt_after= [SELLER_ANSWER, ORDER_STATUS_ANSWER, FALLBACK, HELP_ACTIVE_ORDER, FALLBACK_ASK_MOTIVATION],
 )
 
 app.get_graph().draw_mermaid_png(output_file_path="graph.png")
@@ -183,7 +214,6 @@ app.get_graph().draw_mermaid_png(output_file_path="graph.png")
 
 thread = {"configurable": {"thread_id": "777"}}        
 
-from langchain_core.messages import HumanMessage, AIMessage
 
 
 while True:
