@@ -11,5 +11,6 @@ def check_status(order_number: str) -> status:
     """
     if order_number == "ABC12345":
         return status.DELIVERED
+    return status.DELIVERED
     
 

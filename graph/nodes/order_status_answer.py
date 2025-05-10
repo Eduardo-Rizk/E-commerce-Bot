@@ -1,5 +1,5 @@
 from graph.state import GraphState
-from graph.chain.order_status_chain import order_status_chain
+from graph.chain.order_status_answer_chain import order_status_answer_chain
 from typing  import Dict, Any
 
 def order_status_answer(state: GraphState) -> Dict[str, Any]:
@@ -10,7 +10,7 @@ def order_status_answer(state: GraphState) -> Dict[str, Any]:
     messages = state.get("messages", [])
     hist_conv = state.get("historical_conversation", [])
 
-    result = order_status_chain.invoke({
+    result = order_status_answer_chain.invoke({
         "order_number":         order_number,
         "order_information":    order_info,
         "messages":         messages,

@@ -1,6 +1,6 @@
 from typing import List, TypedDict,Dict, Annotated
 from langchain_core.messages import BaseMessage
-from graph.consts import Intent
+from graph.consts import Intent, status
 from langgraph.graph.message import add_messages
 
 
@@ -22,6 +22,7 @@ class GraphState(TypedDict):
     order_number: bool
     catalog_store: str
     captured_motivation: bool
+    order_status: status
 
     
 

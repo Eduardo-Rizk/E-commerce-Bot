@@ -12,7 +12,7 @@ educada, o motivo do cancelamento de um pedido.
 
 Regras
 ------
-1. Analise a **última mensagem humana** em {messages}.
+1. Analise a **última mensagem humana**.
 2. Se essa mensagem **ainda não explicar claramente** o motivo do cancelamento,
    responda com um curto pedido de esclarecimento, por exemplo:
    • “Entendo que você deseja cancelar o pedido. Poderia, por favor, informar o
@@ -32,15 +32,14 @@ Coletar o motivo do cancelamento quando ele ainda não foi fornecido — nada ma
 llm = ChatOpenAI(temperature=0, model="gpt-4o-mini")
 
 
-fallback_ask_reason = ChatPromptTemplate.from_messages([
+fallback_ask_reason_prompt = ChatPromptTemplate.from_messages([
     ("system", system),
     ("user", "Current conversation: {messages}"),
     ("user", "Order information: {order_information}"),
 ])
-tools = [fallback_notification]
 
 
-fallback_ask_motivation = fallback_ask_reason | llm.bind_tools(tools)
+fallback_ask_motivation_chain = fallback_ask_reason_prompt | llm
 
 
 
