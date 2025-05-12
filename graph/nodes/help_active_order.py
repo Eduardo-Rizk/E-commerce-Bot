@@ -6,7 +6,7 @@ from graph.chain.help_with_active_order_chain import help_with_order_chain
 def help_active_order(state: GraphState) -> Dict[str, any]:
     print(" --- HELP ACTIVE ORDER NODE ---")
 
-    result = help_with_order_chain.invoke({
+    result = help_with_order_chain.invoke({\
         "messages": state.get("messages", []),
     })
 

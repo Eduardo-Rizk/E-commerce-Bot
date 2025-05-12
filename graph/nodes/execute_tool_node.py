@@ -16,4 +16,5 @@ def execute_tool_node(state: GraphState) -> GraphState:
     conversation = state.get("messages", [])
     updated_conversation = tool_node.invoke(conversation)
 
+    print("Updated conversation: ", updated_conversation)
     return {"messages": updated_conversation}

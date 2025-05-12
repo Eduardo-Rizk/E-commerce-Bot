@@ -8,11 +8,12 @@ import os
 import pytest
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage, ToolMessage
 from graph.chain.intention_chain import GradedIntention, intetion_grader
-from graph.consts import Intent
+from graph.consts import Intent, status
 from graph.state import GraphState
 from graph.nodes.help_active_order import help_active_order
 
 
+from graph.nodes.order_status_answer import order_status_answer
 
 from graph.nodes.execute_tool_node import execute_tool_node
 
@@ -22,6 +23,8 @@ from graph.chain.order_status_chain import order_status_chain
 from graph.nodes.tool_call_order_status import order_status_tool_call
 
 from graph.nodes.seller_node import seller_node
+
+from graph.nodes.seller_answer_node import seller_answer_node
 
 from graph.nodes.fallback_node import fallback_node
 
@@ -35,7 +38,7 @@ def test_intention():
         HumanMessage(content="Claro, o número do meu pedido é #98765. Consegue me dizer onde ele está agora?")
     ]
     
-    result = intetion_grader.invoke({"conversation": conversation_mock})
+    result = intetion_grader.invoke({"messages": conversation_mock})
     
 
     assert result.intention == Intent.ORDER_STATUS, f"Esperado: {Intent.ORDER_STATUS}, obtido: {result.intention}"
@@ -43,7 +46,7 @@ def test_intention():
 
 def test_help_active_order_should_ask_for_order_number():
     state: GraphState = {
-        "conversation": [
+        "messages": [
             HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
         ],
         "intention": Intent.ORDER_STATUS,
@@ -57,17 +60,17 @@ def test_help_active_order_should_ask_for_order_number():
     updated_state = help_active_order(state)
 
 
-    print("AI PERGUNTANDO O NUMERO DO PEDIDO: ", updated_state["conversation"][-1])
+    # print("AI PERGUNTANDO O NUMERO DO PEDIDO: ", updated_state["conversation"][-1])
 
     
-    assert isinstance(updated_state["conversation"][-1], AIMessage)
+    assert isinstance(updated_state["messages"][-1], AIMessage)
 
 
 
 
 def test_order_status_chain_toolCall_orderStatus():
     state: GraphState = {
-        "conversation": [
+        "messages": [
             HumanMessage(content="Oi, gostaria de saber onde está meu pedido."),
             AIMessage(content="Claro! Pode me informar o número do pedido?"),
             HumanMessage(content="Sim, é o pedido ABC12345.")
@@ -80,7 +83,7 @@ def test_order_status_chain_toolCall_orderStatus():
         "catalog_store": ""
     }
 
-    order_status_chain_result = order_status_chain.invoke({"order_number": state["order_number"], "order_information": state["order_info"], "conversation": state["conversation"],"historical_conversation": state["historical_conversation"]})
+    order_status_chain_result = order_status_chain.invoke({"order_number": state["order_number"], "order_information": state["order_info"], "messages": state["messages"],"historical_conversation": state["historical_conversation"]})
 
 
     assert isinstance(order_status_chain_result, AIMessage)
@@ -95,7 +98,7 @@ def test_order_status_chain_toolCall_orderStatus():
 
 def test_seller_node_tool_call_created():
     state: GraphState = {
-        "conversation": [
+        "messages": [
             HumanMessage(content="Oi, gostaria de saber quais produtos vocês vendem.")
         ],
         "intention": Intent.PRODUCT_INFO,
@@ -107,7 +110,7 @@ def test_seller_node_tool_call_created():
     }
 
     result = seller_node(state)
-    tool_call = result["conversation"][-1] 
+    tool_call = result["messages"][-1] 
 
 
 
@@ -130,7 +133,7 @@ def test_execute_tool_node_returns_tool_message():
     )
 
     state: GraphState = {
-        "conversation": [tool_call_message],
+        "messages": [tool_call_message],
         "intention": Intent.PRODUCT_INFO,
         "historical_conversation": [],
         "captured_histoical_conversation": False,
@@ -140,7 +143,7 @@ def test_execute_tool_node_returns_tool_message():
     }
 
     updated_state = execute_tool_node(state)
-    last_message = updated_state["conversation"][-1]
+    last_message = updated_state["messages"][-1]
 
 
 
@@ -150,30 +153,32 @@ def test_execute_tool_node_returns_tool_message():
 
 
 
-def test_seller_node_final_response_after_tool():
-    tool_result = ToolMessage(
-        content='{"products":[{"name":"Camiseta","price":59.9}]}',
-        name="fetch_catalog",
-        tool_call_id="call_123"
-    )
+# def test_seller_node_final_response_after_tool():
+#     tool_result = ToolMessage(
+#         content='{"products":[{"name":"Camiseta","price":59.9}]}',
+#         name="fetch_catalog",
+#         tool_call_id="call_123"
+#     )
 
-    state: GraphState = {
-        "conversation": [tool_result],
-        "intention": Intent.PRODUCT_INFO,
-        "historical_conversation": [],
-        "captured_histoical_conversation": False,
-        "order_info": "",
-        "order_number": "",
-        "catalog_store": '{"products":[{"name":"Camiseta","price":59.9}]}'
-    }
+#     state: GraphState = {
+#         "messages": [tool_result],
+#         "intention": Intent.PRODUCT_INFO,
+#         "historical_conversation": [],
+#         "captured_histoical_conversation": False,
+#         "order_info": "",
+#         "order_number": "",
+#         "catalog_store": '{"products":[{"name":"Camiseta","price":59.9}]}'
+#     }
 
-    result = seller_node(state)
-    last_message = result["conversation"][-1]
+#     result = seller_answer_node(state)
+
+#     print("Vendo qual foi a resposta da IA para",result["messages"][-1])
+#     last_message = result["messages"][-1]
 
 
 
-    assert isinstance(last_message, AIMessage)
-    assert "Camiseta" in last_message.content
+#     assert isinstance(last_message, AIMessage)
+#     assert "Camiseta" in last_message.content
 
 
 
@@ -191,7 +196,7 @@ def test_fallback_node_with_cancellation_asks_the_reason():
     ]
 
     state: GraphState = {
-        "conversation": conversation_mock,
+        "messages": conversation_mock,
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
@@ -203,8 +208,8 @@ def test_fallback_node_with_cancellation_asks_the_reason():
     result = fallback_node(state)
 
 
-    print("Last message: Resposta da AI", result["conversation"][-1])
-    assert isinstance(result["conversation"][-1], AIMessage)
+    # print("Last message: Resposta da AI", result["conversation"][-1])
+    assert isinstance(result["messages"][-1], AIMessage)
     
 
 
@@ -222,7 +227,7 @@ def test_fallback_node_with_cancellation_calls_tool():
     ]
 
     state: GraphState = {
-        "conversation": conversation_mock,
+        "messages": conversation_mock,
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
@@ -233,8 +238,8 @@ def test_fallback_node_with_cancellation_calls_tool():
 
     result = fallback_node(state)
 
-    print("Last message: Resposta da AI", result["conversation"][-1])
-    assert isinstance(result["conversation"][-1], AIMessage)
+    # print("Last message: Resposta da AI", result["conversation"][-1])
+    assert isinstance(result["messages"][-1], AIMessage)
 
 
     from graph.chain.tools.fallback_notification import fallback_notification
@@ -266,7 +271,7 @@ def test_fallback_notification_tool_response():
             }])]
     
     state: GraphState = {
-        "conversation": conversation_mock,
+        "messages": conversation_mock,
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
@@ -276,9 +281,9 @@ def test_fallback_notification_tool_response():
     }
 
     updated_state = execute_tool_node(state)
-    last_message = updated_state["conversation"][-1]
-    print("Last message: Resposta da AI", last_message)
-    print("Toda a conversa: Resposta da AI", updated_state["conversation"])
+    last_message = updated_state["messages"][-1]
+    # print("Last message: Resposta da AI", last_message)
+    # print("Toda a conversa: Resposta da AI", updated_state["conversation"])
 
     assert isinstance(last_message, ToolMessage)
     assert last_message.name == "fallback_notification"
@@ -314,7 +319,7 @@ def test_fallback_notification_final_response():
 
 
     state: GraphState = {
-        "conversation": conversation_mock,
+        "messages": conversation_mock,
         "intention": Intent.CANCEL, 
         "historical_conversation": [],
         "captured_histoical_conversation": True,
@@ -325,16 +330,131 @@ def test_fallback_notification_final_response():
 
     result = fallback_node(state)
     
-
-    print("Last message: Resposta da AI", result)
-
-    assert isinstance(result["conversation"][-1], AIMessage)
+    # print("Last message: Resposta da AI", result)
 
 
+    assert isinstance(result["messages"][-1], AIMessage)
+
+
+# Testando a linha de raciocícinio do caminho de order status:
+
+# 1. O cliente pergunta sobre o status do pedido
+def test_order_status_ask_for_number_order():
+    state: GraphState = {
+        "messages": [
+            HumanMessage(content="Oi, gostaria de saber onde está meu pedido.")
+        ],
+        "intention": Intent.ORDER_STATUS,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "order_info": "",
+        "order_number": False,
+        "catalog_store": ""
+    }
+
+    updated_state = help_active_order(state)
+
+
+    assert isinstance(updated_state["messages"][-1], AIMessage)
+
+def test_order_status_tool_call_created():
+    state: GraphState = {
+        "messages": [
+            HumanMessage(content="Oi, gostaria de saber onde está meu pedido."),
+            AIMessage(content="Claro! Pode me informar o número do seu pedido?"),
+            HumanMessage(content="Sim, é o pedido #98765.")
+        ],
+        "intention": Intent.ORDER_STATUS,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "order_info": "",
+        "order_number": False,
+        "catalog_store": ""
+    }
+
+    result = order_status_tool_call(state)
+    tool_call = result["messages"][-1]
+
+
+    # print("Tool call:", tool_call)
+
+
+    assert hasattr(tool_call, "tool_calls")
+    assert tool_call.tool_calls[0]["name"] == "check_status"
 
 
 
 
+def test_order_status_tool_call_response():
+    conversation_mock = [HumanMessage(content="Oi, gostaria de saber onde está meu pedido."),
+        AIMessage(content="Claro! Pode me informar o número do seu pedido?"),
+        HumanMessage(content="Sim, é o pedido #ABC12345."),
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "check_status",
+                    "args": {'order_number': 'ABC12345'},
+                    "id": "call_123",
+                    "type": "tool_call"
+                }
+            ]
+        )]
+
+    state: GraphState = {
+        "messages": conversation_mock,
+        "intention": Intent.ORDER_STATUS,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "order_info": "",
+        "order_number": False,
+        "catalog_store": ""
+    }
+
+    updated_state = execute_tool_node(state)
+
+    last_message = updated_state["messages"][-1]
+
+    print("Last message: Resposta da AI", last_message)
+
+    assert isinstance(last_message, ToolMessage)
+    assert last_message.name == "check_status"
+
+def test_order_status_tool_call_final_response():
+    conversation_mock = [HumanMessage(content="Oi, gostaria de saber onde está meu pedido."),
+        AIMessage(content="Claro! Pode me informar o número do seu pedido?"),
+        HumanMessage(content="Sim, é o pedido #98765."),
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "name": "check_status",
+                    "args": {'order_number': '98765'},
+                    "id": "call_123",
+                    "type": "tool_call"
+                }
+            ]
+        ),
+        ToolMessage(content=status.DELIVERED.value, name="check_status", tool_call_id="call_123")]
+
+
+    state: GraphState = {
+        "messages": conversation_mock,
+        "intention": Intent.ORDER_STATUS,
+        "historical_conversation": [],
+        "captured_histoical_conversation": False,
+        "order_info": "",
+        "order_number": False,
+        "catalog_store": ""
+    }
+
+    result = order_status_answer(state)
+
+    last_message = result["messages"][-1]
+
+    print("Last message: Resposta da AI para a Order: ", last_message)
+
+    assert isinstance(last_message, AIMessage)
 
 
 

@@ -17,4 +17,6 @@ def order_status_tool_call(state: GraphState) -> Dict[str, Any]:
         "historical_conversation": hist_conv,
     })
 
+    print(" O resultado da chamada é: ", result)
+
     return {"messages": [result]}
