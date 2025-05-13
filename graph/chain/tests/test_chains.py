@@ -415,10 +415,13 @@ def test_order_status_tool_call_response():
 
     last_message = updated_state["messages"][-1]
 
-    print("Last message: Resposta da AI", last_message)
+    print("TOOL MESSAGE RESPOSTA DA TOOL", last_message)
 
     assert isinstance(last_message, ToolMessage)
     assert last_message.name == "check_status"
+
+
+
 
 def test_order_status_tool_call_final_response():
     conversation_mock = [HumanMessage(content="Oi, gostaria de saber onde está meu pedido."),
@@ -451,8 +454,6 @@ def test_order_status_tool_call_final_response():
     result = order_status_answer(state)
 
     last_message = result["messages"][-1]
-
-    print("Last message: Resposta da AI para a Order: ", last_message)
 
     assert isinstance(last_message, AIMessage)
 
