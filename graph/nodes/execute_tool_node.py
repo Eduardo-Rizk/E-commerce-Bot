@@ -30,5 +30,8 @@ def execute_tool_node(state: GraphState) -> Dict[str, Any] :
             break
     if last_tool_name == "fetch_catalog":
         return {"messages": updated_conversation, "catalog_store": content}
+    elif last_tool_name == "check_status":
+        return {"messages": updated_conversation, "order_status": content}
+    
     
     return {"messages": updated_conversation}

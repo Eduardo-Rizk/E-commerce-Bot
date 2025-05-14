@@ -48,6 +48,7 @@ def Intention_redirector(state: GraphState):
     order_number  = state.get("order_number", False)
     has_orderinfo = bool(state.get("order_info"))
     has_motivation = state.get("captured_motivation", False)
+    catalog_store = state.get("catalog_store", "")
 
 
     if intent == Intent.ORDER_STATUS:
@@ -67,11 +68,13 @@ def Intention_redirector(state: GraphState):
                 return LOAD_ORDER_INFO
         return HELP_ACTIVE_ORDER
 
-
+    elif intent == Intent.GENERIC or intent == Intent.PRODUCT_INFO:
+        if catalog_store != "":
+            return SELLER_ANSWER
     return SELLER
 
 def Order_Info_Status_Fallback(state: GraphState):
-    print(" --- ORDER INFO STATUS FALLBACK ---")
+    print(" --- ORDER INFO -> STATUS or FALLBACK ---")
     intent = state.get("intention", Intent.GENERIC)
     if intent == Intent.ORDER_STATUS:
         return ORDER_STATUS
@@ -153,6 +156,7 @@ graph.add_conditional_edges(
         HELP_ACTIVE_ORDER: HELP_ACTIVE_ORDER,
         LOAD_ORDER_INFO: LOAD_ORDER_INFO,
         SELLER: SELLER,
+        SELLER_ANSWER: SELLER_ANSWER,
     },
 )
 
@@ -209,8 +213,6 @@ graph.add_conditional_edges(
     },
 )
 
-
-
 memory = MemorySaver()
 app = graph.compile(
         checkpointer   = memory,
@@ -219,7 +221,7 @@ app = graph.compile(
 
 
 
-# app.get_graph().draw_mermaid_png(output_file_path="graphReal.png")
+# app.get_graph().draw_mermaid_png(output_file_path="graph.png")
 
 # print(app.get_graph().draw_ascii())
 
