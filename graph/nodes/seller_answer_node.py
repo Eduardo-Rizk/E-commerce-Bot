@@ -8,8 +8,6 @@ def seller_answer_node(state: GraphState) -> Dict[str, Any]:
     """
     print(" --- SELLER ANSWER NODE ---")
 
-
-
     # print("Mensagens", state.get("messages", []))
 
     result = seller_answer_chain.invoke({

@@ -23,7 +23,7 @@ class GraphState(TypedDict):
 
     order_number: bool
     order_status: str
-    
+
     catalog_store: str
     captured_motivation: bool
 

@@ -49,11 +49,18 @@ def Intention_redirector(state: GraphState):
     has_orderinfo = bool(state.get("order_info"))
     has_motivation = state.get("captured_motivation", False)
     catalog_store = state.get("catalog_store", "")
+    order_status = state.get("order_status", "")
 
 
     if intent == Intent.ORDER_STATUS:
         if order_number:
-            return ORDER_STATUS if has_orderinfo else LOAD_ORDER_INFO
+            if has_orderinfo:
+                if order_status != "":
+                    return ORDER_STATUS_ANSWER
+                else:
+                    return ORDER_STATUS
+            else:
+                return LOAD_ORDER_INFO
         return HELP_ACTIVE_ORDER
 
 
@@ -151,6 +158,7 @@ graph.add_conditional_edges(
     Intention_redirector,
     {
         ORDER_STATUS: ORDER_STATUS,
+        ORDER_STATUS_ANSWER: ORDER_STATUS_ANSWER,
         FALLBACK: FALLBACK,
         FALLBACK_ASK_MOTIVATION: FALLBACK_ASK_MOTIVATION,
         HELP_ACTIVE_ORDER: HELP_ACTIVE_ORDER,
@@ -221,7 +229,7 @@ app = graph.compile(
 
 
 
-# app.get_graph().draw_mermaid_png(output_file_path="graph.png")
+app.get_graph().draw_mermaid_png(output_file_path="graph.png")
 
 # print(app.get_graph().draw_ascii())
 
